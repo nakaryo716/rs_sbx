@@ -1,4 +1,9 @@
-use std::{pin::Pin, sync::{mpsc, Arc, Mutex}, task::{Context, Poll, Waker}, time::Duration};
+use std::{
+    pin::Pin,
+    sync::{Arc, Mutex, mpsc},
+    task::{Context, Poll, Waker},
+    time::Duration,
+};
 
 use futures::task::{self, ArcWake};
 use tokio::time::Instant;
@@ -24,7 +29,7 @@ fn main() {
 
 struct MiniTokio {
     scheduled: mpsc::Receiver<Arc<Task>>,
-    sender: mpsc::Sender<Arc<Task>>
+    sender: mpsc::Sender<Arc<Task>>,
 }
 
 impl MiniTokio {
@@ -37,9 +42,9 @@ impl MiniTokio {
         }
     }
 
-    pub fn spawn<F>(&mut self, future: F) 
-    where 
-        F: Future<Output = ()> + Send + 'static
+    pub fn spawn<F>(&mut self, future: F)
+    where
+        F: Future<Output = ()> + Send + 'static,
     {
         Task::spawn(future, &self.sender);
     }
@@ -52,7 +57,7 @@ impl MiniTokio {
 }
 
 struct TaskFuture {
-    future: Pin<Box<dyn Future<Output = ()>+ Send + 'static>>,
+    future: Pin<Box<dyn Future<Output = ()> + Send + 'static>>,
     poll: Poll<()>,
 }
 
@@ -85,9 +90,9 @@ impl Task {
         f.poll(&mut cx);
     }
 
-    pub fn spawn<F>(future: F, sender: &mpsc::Sender<Arc<Task>>) 
-    where 
-        F: Future<Output = ()> + Send + 'static, 
+    pub fn spawn<F>(future: F, sender: &mpsc::Sender<Arc<Task>>)
+    where
+        F: Future<Output = ()> + Send + 'static,
     {
         let task = TaskFuture::new(future);
         let task = Arc::new(Task {
@@ -104,7 +109,6 @@ impl ArcWake for Task {
         arc_self.sender.send(arc_self.clone()).unwrap();
     }
 }
-
 
 struct Delay {
     when: Instant,
@@ -136,13 +140,13 @@ impl Future for Delay {
             }
         } else {
             let waker = Arc::new(Mutex::new(cx.waker().clone()));
-            let when = self.when.clone();
+            let when = self.when;
             self.waker = Some(waker.clone());
 
             std::thread::spawn(move || {
-               std::thread::sleep(when - Instant::now());
-               let lock = waker.try_lock().unwrap();
-               lock.wake_by_ref();
+                std::thread::sleep(when - Instant::now());
+                let lock = waker.try_lock().unwrap();
+                lock.wake_by_ref();
             });
         }
         Poll::Pending
