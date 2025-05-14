@@ -1,3 +1,3 @@
 [workspace]
 resolver = "3"
-members = ["async_rs", "ws"]
+members = ["async_rs", "http3", "ws"]
